@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: country-integration-config
+  namespace: country-integration
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  DB_URL: "jdbc:mysql://mysql:3306/countrydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+  DB_POOL_SIZE: "10"
+  SOAP_URL: "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso"
+  SOAP_CONNECT_TIMEOUT_MS: "3000"
+  SOAP_READ_TIMEOUT_MS: "5000"
+  JAVA_OPTS: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"

@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: country-integration-service
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/countrydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 5000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: ${DDL_AUTO:update}   # use Flyway/Liquibase + 'validate' for real production
+    properties:
+      hibernate.default_batch_fetch_size: 50
+  cache:
+    type: caffeine
+    cache-names: isoCodes,fullCountryInfo
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=24h
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: 8080
+  shutdown: graceful
+
+soap:
+  country-info:
+    url: ${SOAP_URL:http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso}
+    connect-timeout-ms: ${SOAP_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${SOAP_READ_TIMEOUT_MS:5000}
+
+resilience4j:
+  retry:
+    instances:
+      soap:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.ncba.countryintegration.exception.ExternalServiceException
+        ignore-exceptions:
+          - com.ncba.countryintegration.exception.CountryNotFoundException
+  circuitbreaker:
+    instances:
+      soap:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.ncba.countryintegration.exception.ExternalServiceException
+        ignore-exceptions:
+          - com.ncba.countryintegration.exception.CountryNotFoundException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    com.ncba: INFO

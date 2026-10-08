@@ -1,0 +1,16 @@
+# Only the app may talk to MySQL. (Needs a CNI that enforces NetworkPolicy, e.g. Calico/Cilium.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mysql-allow-app-only
+  namespace: country-integration
+spec:
+  podSelector:
+    matchLabels: { app: mysql }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: country-integration }
+      ports:
+        - { protocol: TCP, port: 3306 }

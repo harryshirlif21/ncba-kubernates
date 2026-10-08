@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: country-integration
+  namespace: country-integration
+spec:
+  type: ClusterIP
+  selector: { app: country-integration }
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

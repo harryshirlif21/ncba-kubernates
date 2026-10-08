@@ -1,0 +1,66 @@
+# Single-node MySQL for demo/dev. For production prefer a managed DB (Cloud SQL / RDS) or a MySQL operator (HA, backups).
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: country-integration
+spec:
+  clusterIP: None            # headless: stable DNS for the StatefulSet
+  selector: { app: mysql }
+  ports:
+    - port: 3306
+      name: mysql
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: country-integration
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector:
+    matchLabels: { app: mysql }
+  template:
+    metadata:
+      labels: { app: mysql }
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports: [{ containerPort: 3306, name: mysql }]
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: country-integration-secret, key: mysql-root-password } }
+            - name: MYSQL_DATABASE
+              value: countrydb
+            - name: MYSQL_USER
+              valueFrom: { secretKeyRef: { name: country-integration-secret, key: db-username } }
+            - name: MYSQL_PASSWORD
+              valueFrom: { secretKeyRef: { name: country-integration-secret, key: db-password } }
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\""]
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\""]
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi

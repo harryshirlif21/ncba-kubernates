@@ -1,0 +1,28 @@
+# Local run:  docker compose up --build
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: countrydb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    ports: ["3307:3306"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes: [mysql-data:/var/lib/mysql]
+  app:
+    build: .
+    depends_on:
+      mysql: { condition: service_healthy }
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/countrydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: appuser
+      DB_PASSWORD: apppass
+      SPRING_PROFILES_ACTIVE: prod
+    ports: ["8080:8080"]
+volumes:
+  mysql-data:

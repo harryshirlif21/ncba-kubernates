@@ -1,0 +1,21 @@
+# Requires an ingress controller (ingress-nginx assumed). Change the host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: country-integration
+  namespace: country-integration
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "50"            # basic edge rate limiting
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: country-api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: country-integration
+                port: { number: 80 }
