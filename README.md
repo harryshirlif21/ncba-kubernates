@@ -165,6 +165,22 @@ mvn test
 For an end-to-end test against a running instance, run `scripts/smoke-test.sh` from a shell that
 supports it. Set `BASE_URL` to use a different app address.
 
+## Test Status
+
+The following scenarios were verified manually:
+
+| Environment | Manually verified |
+|---|---|
+| Docker Compose and Postman | POST lookups for Kenya, Tanzania, and Uganda; GET all; GET by ID; GET unknown ID returns 404; PUT partial update; PUT replace languages |
+| Docker Desktop Kubernetes | `scripts/deploy.sh` succeeds; two app replicas and MySQL are Running; app recovers after a pod is deleted; scaled from two to four replicas; in-cluster POST lookup returns 201 |
+
+Not yet verified manually:
+
+| Area | Not yet verified |
+|---|---|
+| REST API | DELETE endpoint; PUT validation error (400) |
+| Resilience and scaling | Circuit breaker and stored-data fallback; HPA autoscaling |
+
 ## API
 
 | Method | Path | Purpose | Success |

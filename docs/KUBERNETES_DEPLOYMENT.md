@@ -45,6 +45,53 @@ BASE_URL=http://localhost:8080 ./scripts/smoke-test.sh
 ```
 Via Ingress: add the ingress IP to `/etc/hosts` for `country-api.example.com` (or edit the host in `05-ingress.yaml`).
 
+## Running on Docker Desktop Kubernetes (Windows)
+
+### Enable Kubernetes
+
+In Docker Desktop, enable Kubernetes and select the `kubeadm` cluster type so the cluster can use
+images built in Docker Desktop's local image store. In PowerShell, select the Docker Desktop context:
+
+```powershell
+kubectl config use-context docker-desktop
+```
+
+### Deploy from Git Bash
+
+Open Git Bash in the project directory (the one containing `scripts/deploy.sh`) and set the required
+credentials in that shell. Replace the placeholders with your own values; do not put real credentials
+in tracked files.
+
+```bash
+export DB_USERNAME='<database username>'
+export DB_PASSWORD='<database password>'
+export MYSQL_ROOT_PASSWORD='<MySQL root password>'
+./scripts/deploy.sh
+```
+
+If Git Bash reports `\r: command not found`, convert the shell scripts to LF line endings and rerun
+the deploy command:
+
+```bash
+sed -i 's/\r$//' scripts/*.sh
+```
+
+### Access the app
+
+Forward the service port from a terminal and leave the command running while testing:
+
+```bash
+kubectl -n country-integration port-forward svc/country-integration 8080:80
+```
+
+The API is then available at `http://localhost:8080`. If the forwarded pod is deleted, run the
+port-forward command again.
+
+On Docker Desktop, the HPA may show `cpu: <unknown>` until metrics-server is installed; this is
+expected for that setup. HPA autoscaling was not observed locally. The first request after startup
+took about 18 seconds during the local run, consistent with JVM cold start on a local node; warm
+requests took 1-3 seconds.
+
 ## 5. Operate
 ```bash
 # Scale manually (HPA will override within its min/max)
