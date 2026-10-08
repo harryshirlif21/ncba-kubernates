@@ -1,0 +1,26 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"16px","lineColor":"#64748b"}}}%%
+flowchart LR
+    filter["CorrelationIdFilter<br/>propagates X-Correlation-Id"] --> controller["Controller<br/>CountryController"]
+    controller --> service["Service<br/>CountryService"]
+    service --> repository["Repository<br/>CountryInfoRepository"]
+    repository --> database[("MySQL")]
+    service --> adapter["SOAP adapter<br/>CountryInfoSoapClient<br/>SoapXmlParser"]
+    adapter --> soap["CountryInfoService<br/>SOAP"]
+
+    requestDto["Request DTOs<br/>CountryRequest<br/>UpdateCountryRequest"] -. used by .-> controller
+    responseDto["Response DTOs<br/>CountryResponse<br/>PagedResponse"] -. returned by .-> controller
+    entities["Entities<br/>CountryInfo<br/>Language"] -. persisted by .-> repository
+    errors["GlobalExceptionHandler<br/>consistent JSON errors"] -. handles exceptions from .-> controller
+
+    logs["Structured logs<br/>correlationId"] -. emitted per request .-> filter
+    metrics["Micrometer metrics<br/>/actuator/prometheus"] -. exposed by app .-> service
+    health["Actuator probes<br/>liveness and readiness"] -. readiness includes DB .-> repository
+
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px;
+    classDef database fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px;
+    classDef external fill:#ffedd5,stroke:#ea580c,color:#7c2d12,stroke-width:1.5px;
+    classDef infra fill:#f1f5f9,stroke:#64748b,color:#1e293b,stroke-width:1.2px;
+
+    class filter,controller,service,repository,requestDto,responseDto,entities,errors,logs,metrics,health app;
+    class database database;
+    class adapter,soap external;

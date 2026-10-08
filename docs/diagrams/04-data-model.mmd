@@ -1,0 +1,23 @@
+%%{init: {"theme":"forest","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"16px"}}}%%
+erDiagram
+    direction LR
+    country_info ||--o{ language : has
+
+    country_info {
+        id id PK
+        code iso_code UK
+        text name
+        text capital_city
+        text phone_code
+        code continent_code
+        code currency_iso_code
+        text country_flag
+        time updated_at
+    }
+
+    language {
+        id id PK
+        code iso_code
+        text name
+        id country_id FK
+    }

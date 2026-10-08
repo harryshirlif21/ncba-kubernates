@@ -1,0 +1,43 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"16px","lineColor":"#64748b"}}}%%
+flowchart LR
+    client["External client"] --> ingress
+
+    subgraph cluster["Kubernetes cluster"]
+        subgraph ns["Namespace: country-integration"]
+            direction LR
+            ingress["Ingress: nginx<br/>limit 50 rps"] --> svc["Service: country-integration<br/>ClusterIP 80 to 8080"]
+            svc --> deployment
+
+            subgraph deployment["Deployment: country-integration<br/>2 replicas; maxUnavailable 0"]
+                direction TB
+                subgraph pods["Application pods"]
+                    direction LR
+                    pod1["App pod 1<br/>init: wait-for-mysql<br/>app + startup, liveness,<br/>readiness probes"]
+                    pod2["App pod 2<br/>init: wait-for-mysql<br/>app + startup, liveness,<br/>readiness probes"]
+                end
+            end
+
+            hpa["HPA<br/>2-10 replicas; CPU 70%"] -.-> deployment
+            pdb["PDB<br/>minAvailable 1"] -.-> deployment
+            config["ConfigMap<br/>country-integration-config"] --> deployment
+            secret["Secret<br/>country-integration-secret"] --> deployment
+
+            deployment --> mysqlService["Headless Service: mysql<br/>3306"]
+            mysqlService --> mysqlSet["StatefulSet: mysql<br/>pod mysql-0; MySQL 8"]
+            mysqlSet --> pvc["PVC: 5 Gi"]
+            secret --> mysqlSet
+            networkPolicy["NetworkPolicy<br/>allow app pods to MySQL"] -.-> mysqlService
+        end
+    end
+
+    deployment --> soap["CountryInfoService<br/>external SOAP"]
+
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px;
+    classDef database fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px;
+    classDef external fill:#ffedd5,stroke:#ea580c,color:#7c2d12,stroke-width:1.5px;
+    classDef infra fill:#f1f5f9,stroke:#64748b,color:#1e293b,stroke-width:1.2px;
+
+    class svc,deployment,pods,pod1,pod2 app;
+    class mysqlService,mysqlSet,pvc database;
+    class soap external;
+    class client,ingress,hpa,pdb,config,secret,networkPolicy,cluster,ns infra;

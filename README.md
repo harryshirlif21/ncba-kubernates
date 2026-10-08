@@ -14,7 +14,8 @@ Client --POST {"name":"kenya"}--> REST controller --> Service --> SOAP client --
 
 Docs: [Architecture & design decisions](docs/ARCHITECTURE.md) |
 [Kubernetes deployment guide](docs/KUBERNETES_DEPLOYMENT.md) |
-[Kubernetes troubleshooting guide](docs/TROUBLESHOOTING.md)
+[Kubernetes troubleshooting guide](docs/TROUBLESHOOTING.md) |
+[Architecture and flow diagrams (PDF)](docs/Architecture-Diagrams.pdf)
 
 ## Requirements
 - Windows with Docker Desktop installed and running (Docker Compose v2).

@@ -1,0 +1,31 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"16px","lineColor":"#64748b"}}}%%
+flowchart LR
+    start([POST lookup]) --> cache["Check per-operation SOAP caches<br/>ISO code and full info; 24h"]
+    cache -->|Cached result| persist["Persist country and languages<br/>after SOAP resolution"]
+    cache -->|Cache miss| soapCall["SOAP operation<br/>connect 3s; read 5s"]
+    soapCall --> result{"SOAP result"}
+    result -->|Success| persist
+    result -->|Country not found| notFound["404 Not Found<br/>no retry; breaker ignores"]
+    result -->|ExternalServiceException<br/>timeout or bad XML| retry["Retry SOAP operation<br/>up to 3 attempts<br/>backoff 0.5s, then 1s"]
+    retry -->|More attempts| soapCall
+    retry -->|Exhausted or circuit open| stored{"Country already stored?"}
+    stored -->|Yes| fallback["200 OK<br/>X-Data-Source: stored-fallback"]
+    stored -->|No| unavailable["503 Service Unavailable<br/>friendly error"]
+    persist --> created{"New ISO code?"}
+    created -->|Yes| createdOk["201 Created"]
+    created -->|No| updatedOk["200 OK"]
+    breakerNote["Circuit breaker: 10-call window<br/>minimum 5; opens at 50% failures<br/>open for 20s"] -. applies to SOAP .-> soapCall
+
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px;
+    classDef database fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px;
+    classDef external fill:#ffedd5,stroke:#ea580c,color:#7c2d12,stroke-width:1.5px;
+    classDef success fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px;
+    classDef fallbackClass fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:1.5px;
+    classDef failure fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px;
+
+    class start,cache,retry,breakerNote app;
+    class persist database;
+    class soapCall external;
+    class createdOk,updatedOk success;
+    class fallback fallbackClass;
+    class notFound,unavailable failure;

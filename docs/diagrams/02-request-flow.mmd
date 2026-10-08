@@ -1,0 +1,33 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"16px"}}}%%
+sequenceDiagram
+    actor Client
+    box rgba(219,234,254,0.45) Application
+        participant Controller
+        participant Service as CountryService
+        participant Adapter as SOAP adapter
+    end
+    box rgba(255,237,213,0.45) External SOAP service
+        participant SOAP as CountryInfoService
+    end
+    box rgba(220,252,231,0.45) Database
+        participant MySQL
+    end
+
+    Client->>Controller: POST /api/v1/countries {name: kenya}
+    Note over Controller: Validate input. Invalid request returns 400
+    Controller->>Service: lookupAndStore(kenya)
+    Note over Service: Sentence-case name to Kenya
+    Service->>Adapter: getCountryIsoCode(Kenya)
+    Adapter->>SOAP: CountryISOCode(sCountryName)
+    SOAP-->>Adapter: KE or not-found text
+    Adapter-->>Service: ISO code KE
+    Service->>Adapter: getFullCountryInfo(KE)
+    Adapter->>SOAP: FullCountryInfo(sCountryISOCode)
+    SOAP-->>Adapter: Name, capital, phone, continent, currency, flag, languages
+    Adapter-->>Service: FullCountryInfoData
+    Note over Adapter,Controller: No ISO code raises CountryNotFoundException and returns 404
+    Note over Service,MySQL: DB transaction starts after both SOAP calls
+    Service->>MySQL: Find by ISO, save country and replace languages
+    MySQL-->>Service: Persisted country
+    Service-->>Controller: LookupResult
+    Controller-->>Client: 201 Created for new or 200 OK for existing

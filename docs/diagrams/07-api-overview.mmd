@@ -1,0 +1,13 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"16px","lineColor":"#64748b"}}}%%
+flowchart TB
+    client["Client"] --> api["REST API<br/>/api/v1"]
+    subgraph endpoints["Available routes"]
+        direction LR
+        countryRoutes["Country routes<br/>GET /countries: paged 200<br/>POST /countries: 201 new, 200 existing<br/>POST errors: 400, 404 or 503<br/>GET /{id}: 200 or 404<br/>PUT /{id}: 200, 400 or 404<br/>DELETE /{id}: 204 or 404"]
+        actuator["Actuator<br/>/actuator/health/liveness<br/>/actuator/health/readiness<br/>/actuator/prometheus"]
+    end
+    api --> countryRoutes
+    api --> actuator
+
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px;
+    class client,api,countryRoutes,actuator app;

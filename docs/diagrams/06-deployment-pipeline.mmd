@@ -1,0 +1,19 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"16px","lineColor":"#64748b"}}}%%
+flowchart LR
+    build["docker build<br/>application image"] --> image{"Image target"}
+    image -->|Local Docker Desktop| applyConfig
+    image -->|Optional: load to kind or Minikube<br/>or push to registry| applyConfig
+    applyConfig["Apply namespace and ConfigMap"] --> secret["Create or update Kubernetes Secret<br/>from environment variables"]
+    secret --> mysql["Apply MySQL Service and StatefulSet<br/>wait for StatefulSet rollout"]
+    mysql --> app["Apply app Deployment<br/>wait for Deployment rollout"]
+    app --> resources["Apply Service, HPA,<br/>NetworkPolicy and Ingress"]
+    resources --> report["Print pods, services, HPA<br/>and port-forward hint"]
+    report -. manual follow-up .-> verify["Port-forward to test API<br/>run smoke-test.sh separately"]
+
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px;
+    classDef database fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px;
+    classDef infra fill:#f1f5f9,stroke:#64748b,color:#1e293b,stroke-width:1.2px;
+
+    class app app;
+    class mysql database;
+    class build,image,applyConfig,secret,resources,report,verify infra;
